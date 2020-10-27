@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from custombt.backtest import Backtest
 from custombt.strategy import Strategy
+from random import randint
 
 
 # ============================================== #
@@ -42,16 +43,29 @@ for current_price in price:
 #               build startegy class             #
 # ============================================== #
 
+# set parameters for sampling
+min_initial_samples = 1000
+start_index = randint(min_initial_samples, len(data))
+episode_len = len(data) - start_index
+eval_data = data.iloc[start_index:]
+eval_ema_table = ema_table[start_index:]
+
 class train_model(Strategy):
+    agent = Agent(ema_size + 1)
 
     def init(self):
+        self.index = 0
+        # self.state = get_state(eval_ema_table[0], )
         pass
 
     def next(self):
+        self.action = self.agent.act(self.state)
+        self.next_state = get_state()
+        self.index += 1
         pass
 
 # run training
-bt = Backtest(  data = data,
+bt = Backtest(  data = eval_data,
                 strategy = train_model,
                 cash = 2000.0,
                 coins = 0.0,
