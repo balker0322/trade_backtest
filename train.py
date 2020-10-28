@@ -55,14 +55,38 @@ class train_model(Strategy):
 
     def init(self):
         self.index = 0
-        # self.state = get_state(eval_ema_table[0], )
-        pass
+        self.state = self.get_state(eval_ema_table[0])
 
     def next(self):
-        self.action = self.agent.act(self.state)
-        self.next_state = get_state()
+        action = self.agent.act(self.state) # planned action
+
+        if action == 0 and self.get_current_position() == 1:
+            action = 0 if self.sell() else 1 # get the actual action
+
+        elif action == 1 and self.get_current_position() == 0:
+            action = 1 if self.buy() else 0 # get the actual action
+
+        next_state = self.get_state(eval_ema_table[self.index + 1])
+        reward = 0 # todo
+        done = 0 # todo
+        self.agent.memory.append((self.state, action, reward, next_state, done))
         self.index += 1
-        pass
+        self.state = next_state
+
+    def get_state(self, ema):
+        ema = ema.copy
+        mean = np.mean(ema)
+        std = np.std(ema)
+        ema = (ema - mean) / std
+        ema -= ema[0]
+        return np.append(ema, float(self.get_current_position()))
+    
+    def get_current_position(self):
+        current_cash_value = self.get_cash()
+        current_coin_value = self.get_coins() * self.data.Close
+        if current_cash_value > current_coin_value:
+            return 0
+        return 1
 
 # run training
 bt = Backtest(  data = eval_data,
