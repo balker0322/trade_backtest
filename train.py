@@ -47,7 +47,7 @@ for current_price in price:
 min_initial_samples = 1000
 start_index = randint(min_initial_samples, len(data))
 episode_len = len(data) - start_index
-eval_data = data.iloc[start_index:]
+eval_data = data.iloc[start_index:-1]
 eval_ema_table = ema_table[start_index:]
 
 class train_model(Strategy):
@@ -55,7 +55,7 @@ class train_model(Strategy):
 
     def init(self):
         self.index = 0
-        self.state = self.get_state(eval_ema_table[0])
+        self.state = self.get_state(eval_ema_table[self.index])
 
     def next(self):
         action = self.agent.act(self.state) # planned action
