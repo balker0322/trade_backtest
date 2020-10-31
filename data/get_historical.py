@@ -11,7 +11,8 @@ BINANCE_CREDENTIALS = {
     'SECRET': os.environ.get('BINANCE_SECRET'),
 }
 
-pickle_file_name = 'kline'
+data_folder = 'data/'
+pickle_file_name = data_folder+'kline'
 number_of_months = '24'
 
 
@@ -36,7 +37,7 @@ def convert_to_csv():
                                             'taker buy quote asset volume',
                                             'ignore'])
         df.set_index('E', inplace=True)
-        df.to_csv('btcusdt'+number_of_months+'mo.csv')
+        df.to_csv(data_folder+'btcusdt'+number_of_months+'mo.csv')
 
 
 
