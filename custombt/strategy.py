@@ -18,6 +18,7 @@ class Strategy(metaclass=ABCMeta):
         self._trade_log = 'HOLD'
         self._tick_size = tick_size
         self._lot_size = lot_size
+        self.status_display = dict()
     
     @abstractmethod
     def next(self):
@@ -30,6 +31,26 @@ class Strategy(metaclass=ABCMeta):
         '''
         define this method
         '''
+
+    def test_buy(self, size: float = 1.0):
+        quantity, price, fee = self._calc_buy(size)
+        cash = self._cash
+        coins = self._coins
+        if quantity:
+            cash -= price
+            cash -= fee
+            coins += quantity
+        return cash, coins
+    
+    def test_sell(self, size: float = 1.0):
+        quantity, price, fee = self._calc_sell(size)
+        cash = self._cash
+        coins = self._coins
+        if quantity:
+            cash += price
+            cash -= fee
+            coins -= quantity
+        return cash, coins
 
     def buy(self, size: float = 1.0):
         quantity, price, fee = self._calc_buy(size)
@@ -91,3 +112,6 @@ class Strategy(metaclass=ABCMeta):
         fee = price*commission
 
         return float(quantity), float(price), float(fee)
+    
+    def get_status_display(self):
+        return self.status_display

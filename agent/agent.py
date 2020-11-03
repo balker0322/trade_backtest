@@ -12,7 +12,7 @@ class Agent:
 	def __init__(self, state_size, is_eval=False, model_name=""):
 		self.state_size = state_size # normalized previous days
 		self.action_size = 2 # cash, coins
-		self.memory = deque(maxlen=1000)
+		self.memory = deque(maxlen=100)
 		self.inventory = []
 		self.model_name = model_name
 		self.is_eval = is_eval
@@ -20,8 +20,7 @@ class Agent:
 		self.gamma = 0.95
 		self.epsilon = 1.0
 		self.epsilon_min = 0.01
-		self.epsilon_decay = 0.995
-
+		self.epsilon_decay = 0.999
 		self.model = load_model("models/" + model_name) if is_eval else self._model()
 
 	def _model(self):
@@ -54,7 +53,9 @@ class Agent:
 
 			target_f = self.model.predict(state)
 			target_f[0][action] = target
-			self.model.fit(state, target_f, epochs=1, verbose=0)
+			self.model.fit(state, target_f, epochs=2, verbose=0)
 
 		if self.epsilon > self.epsilon_min:
-			self.epsilon *= self.epsilon_decay 
+			self.epsilon *= self.epsilon_decay
+		else:
+			self.epsilon = 1.0

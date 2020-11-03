@@ -19,7 +19,7 @@ eval_ema_table = None
 batch_size = 10
 try:
     e = max([int(entry[len('model_ep'):]) for entry in os.listdir('models/')]) + 1
-    agent = Agent(ema_size + 1, model_name='model_ep'+str(e-1))
+    agent = Agent(ema_size + 1, is_eval=True, model_name='model_ep'+str(e-1))
     print('loading ' + 'model_ep'+str(e-1))
 except:
     e = 1
@@ -37,22 +37,21 @@ class train_model(Strategy):
     def next(self):
         action = agent.act(self.state) # planned action
         current_position = self.get_current_position()
-        reward = 0.0
         action_log = 'HOLD'
 
         if action == 0 and current_position == 1:
             action = 1
             if self.sell():
                 action = 0 # get the actual action
-                reward -= 0.001
                 action_log = 'SELL'
+                print('sell...')
 
         elif action == 1 and current_position == 0:
             action = 0
             if self.buy():
                 action = 1 # get the actual action
-                reward -= 0.001
                 action_log = 'BUY'
+                print('buy...')
 
         next_state = self.get_state(ema=eval_ema_table[self.index + 1])
         next_equity = self.get_equity(current_price=eval_data.iloc[self.index + 1].Close)
@@ -70,17 +69,17 @@ class train_model(Strategy):
         '''
 
 
-        # reward = (next_equity / self.equity) - 1.0
-        reward += self.calc_reward()
+        reward = (next_equity / self.equity) - 1.0
         agent.memory.append((self.state, action, reward, next_state))
         self.index += 1
         self.state = next_state
         self.equity = next_equity
         
-        if len(agent.memory) > batch_size:
-            agent.expReplay(batch_size)
+        # if len(agent.memory) > batch_size:
+        #     agent.expReplay(batch_size)
         
-        self.status_display['reward'] = ('>' if reward < 0.0 else '> ') + "{0:.4f} % ({1:.2f} USDT)".format(reward*100, self.equity)
+        profit = self.equity/self.initial_equity - 1.0
+        self.status_display['profit'] = ('>' if profit < 0.0 else '> ') + "{0:.4f} % ({1:.2f} USDT)".format(profit*100, self.equity)
         self.status_display['action'] = action_log
 
     def get_state(self, ema):
@@ -104,21 +103,9 @@ class train_model(Strategy):
     def get_equity(self, current_price):
         return self.get_cash() + current_price * self.get_coins()
 
-    def calc_reward(self):
-        current_price = eval_data.iloc[self.index].Close
-        next_price = eval_data.iloc[self.index + 1].Close
-        total_equity = self.get_equity(current_price=next_price)
-        cash_weight = self.get_cash() / total_equity
-        coin_weight = 1.0 - cash_weight
-        cash_reward = (current_price/next_price - 1.0) * cash_weight
-        coin_reward = (next_price/current_price - 1.0) * coin_weight
-        return cash_reward + coin_reward
-    
-
-
 while True:
     print('Episode {}:'.format(e))
-    episode_len = randint(150, 1000)
+    episode_len = randint(1000, 5000)
     start_index = randint(min_initial_samples, len(data) - episode_len)
     eval_data = data.iloc[start_index:start_index+episode_len]
     eval_ema_table = ema_table[start_index:start_index+episode_len]
@@ -133,6 +120,22 @@ while True:
 
     bt.run()
 
-    agent.model.save("models/model_ep" + str(e))
+    # agent.model.save("models/model_ep" + str(e))
 
     e += 1
+
+# print('Episode {}:'.format(e))
+# episode_len = randint(50000, 70000)
+# start_index = randint(min_initial_samples, len(data) - episode_len)
+# eval_data = data.iloc[start_index:start_index+episode_len]
+# eval_ema_table = ema_table[start_index:start_index+episode_len]
+
+# bt = Backtest(  data = eval_data.iloc[:-1],
+#             strategy = train_model,
+#             cash = 0.0,
+#             coins = 1.0,
+#             commission = 0.001,
+#             tick_size = 0.01000000,
+#             lot_size = 0.00000100,)
+
+# bt.run()

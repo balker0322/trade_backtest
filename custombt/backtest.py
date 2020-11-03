@@ -83,9 +83,7 @@ class Backtest():
 
             alpha = 0.1
             time1 = (1.0-alpha)*time1 + alpha*(activity_log_time - start_time)*1000
-            bar.set_postfix(ordered_dict={  "activity_log_time":"{0:.2f} ms".format(time1),
-                                            "Equity":"{0:.2f}% ({1:.2f} USDT)".format((equity/initial_equity)*100, equity)
-                                            })
+            bar.set_postfix(ordered_dict=strategy.get_status_display())
     
     def plot(self):
         pass
